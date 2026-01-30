@@ -52,7 +52,7 @@ const NEWS_SOURCES = [
         id: 'reddit',
         name: 'Reddit',
         icon: '🤖',
-        api: 'https://www.reddit.com/r/ArtificialIntelligence/hot.json?limit=20',
+        url: 'https://www.reddit.com/r/ArtificialIntelligence/hot.json?limit=20',
         transform: (data) => {
             const posts = data.data.children;
             return posts.map(post => ({
