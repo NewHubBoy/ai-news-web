@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 AI News - 每日AI资讯</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>🤖 AI News</h1>
+        <p class="subtitle">每日AI实时资讯 · 每2小时自动更新</p>
+        <div class="controls">
+            <select id="sourceFilter">
+                <option value="">所有来源</option>
+                <option value="twitter">Twitter/X</option>
+                <option value="reddit">Reddit</option>
+                <option value="news">AI News</option>
+                <option value="hackernews">Hacker News</option>
+            </select>
+            <button id="refreshBtn">🔄 立即刷新</button>
+        </div>
+        <p class="last-updated">最后更新: <span id="lastUpdated">-</span> · <span id="nextUpdate">2小时后自动刷新</span></p>
+    </header>
+
+    <main>
+        <div class="stats">
+            <div class="stat-item">
+                <span class="stat-number" id="newsCount">0</span>
+                <span class="stat-label">条资讯</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number" id="sourceCount">0</span>
+                <span class="stat-label">个来源</span>
+            </div>
+        </div>
+        
+        <div id="newsList" class="news-grid">
+            <div class="loading">加载中...</div>
+        </div>
+    </main>
+
+    <footer>
+        <p>数据来源: Twitter/X · Reddit · AI News · Hacker News</p>
+        <p>Powered by OpenClaw 🦞</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
