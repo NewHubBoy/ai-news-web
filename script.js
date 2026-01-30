@@ -85,25 +85,50 @@ const NEWS_SOURCES = [
         id: 'verge',
         name: 'The Verge',
         icon: '🔮',
-        url: 'https://www.theverge.com/rss/artificial-intelligence/index.xml',
+        url: 'https://www.theverge.com/rss/index.xml',
         transform: (xml, sourceId) => {
             const parser = new DOMParser();
             const doc = parser.parseFromString(xml, 'text/xml');
-            const items = doc.querySelectorAll('item');
+            const entries = doc.querySelectorAll('entry');
             const news = [];
-            items.forEach(item => {
-                const title = item.querySelector('title');
-                const link = item.querySelector('link');
-                const desc = item.querySelector('description');
-                const pubDate = item.querySelector('pubDate');
-                if (title && link) {
-                    news.push({
-                        title: title.textContent,
-                        url: link.textContent,
-                        source: sourceId,
-                        time: pubDate ? new Date(pubDate.textContent).getTime() / 1000 : Date.now() / 1000,
-                        description: desc ? desc.textContent.replace(/<[^>]*>/g, '').substring(0, 200) : ''
-                    });
+            entries.forEach(entry => {
+                const title = entry.querySelector('title');
+                const linkEl = entry.querySelector('link[rel="alternate"]');
+                const summary = entry.querySelector('summary, content');
+                const updated = entry.querySelector('updated, published');
+                
+                if (title && linkEl) {
+                    const titleText = title.textContent;
+                    // Filter AI-related content
+                    if (titleText.toLowerCase().includes('ai') || 
+                        titleText.toLowerCase().includes('gpt') ||
+                        titleText.toLowerCase().includes('llm') ||
+                        titleText.toLowerCase().includes('openai') ||
+                        titleText.toLowerCase().includes('anthropic') ||
+                        titleText.toLowerCase().includes('gemini') ||
+                        titleText.toLowerCase().includes('claude') ||
+                        titleText.toLowerCase().includes('artificial intelligence')) {
+                        
+                        let description = '';
+                        if (summary) {
+                            const content = summary.textContent || summary.innerHTML || '';
+                            description = content.replace(/<[^>]*>/g, '').substring(0, 200);
+                        }
+                        
+                        let time = Date.now() / 1000;
+                        if (updated) {
+                            const dateStr = updated.textContent;
+                            time = new Date(dateStr).getTime() / 1000;
+                        }
+                        
+                        news.push({
+                            title: titleText,
+                            url: linkEl.getAttribute('href'),
+                            source: sourceId,
+                            time: time,
+                            description: description
+                        });
+                    }
                 }
             });
             return news;
