@@ -58,7 +58,7 @@ const NEWS_SOURCES = [
         name: 'TechCrunch',
         icon: '📰',
         url: 'https://techcrunch.com/category/artificial-intelligence/feed/',
-        transform: (xml) => {
+        transform: (xml, sourceId) => {
             const parser = new DOMParser();
             const doc = parser.parseFromString(xml, 'text/xml');
             const items = doc.querySelectorAll('item');
@@ -72,7 +72,7 @@ const NEWS_SOURCES = [
                     news.push({
                         title: title.textContent,
                         url: link.textContent,
-                        source: 'news',
+                        source: sourceId,
                         time: pubDate ? new Date(pubDate.textContent).getTime() / 1000 : Date.now() / 1000,
                         description: desc ? desc.textContent.replace(/<[^>]*>/g, '').substring(0, 200) : ''
                     });
@@ -86,7 +86,7 @@ const NEWS_SOURCES = [
         name: 'The Verge',
         icon: '🔮',
         url: 'https://www.theverge.com/rss/artificial-intelligence/index.xml',
-        transform: (xml) => {
+        transform: (xml, sourceId) => {
             const parser = new DOMParser();
             const doc = parser.parseFromString(xml, 'text/xml');
             const items = doc.querySelectorAll('item');
@@ -100,7 +100,7 @@ const NEWS_SOURCES = [
                     news.push({
                         title: title.textContent,
                         url: link.textContent,
-                        source: 'news',
+                        source: sourceId,
                         time: pubDate ? new Date(pubDate.textContent).getTime() / 1000 : Date.now() / 1000,
                         description: desc ? desc.textContent.replace(/<[^>]*>/g, '').substring(0, 200) : ''
                     });
@@ -114,7 +114,7 @@ const NEWS_SOURCES = [
         name: 'MIT Tech Review',
         icon: '🔬',
         url: 'https://www.technologyreview.com/topic/artificial-intelligence/feed',
-        transform: (xml) => {
+        transform: (xml, sourceId) => {
             const parser = new DOMParser();
             const doc = parser.parseFromString(xml, 'text/xml');
             const items = doc.querySelectorAll('item');
@@ -128,7 +128,7 @@ const NEWS_SOURCES = [
                     news.push({
                         title: title.textContent,
                         url: link.textContent,
-                        source: 'news',
+                        source: sourceId,
                         time: pubDate ? new Date(pubDate.textContent).getTime() / 1000 : Date.now() / 1000,
                         description: desc ? desc.textContent.replace(/<[^>]*>/g, '').substring(0, 200) : ''
                     });
@@ -139,16 +139,15 @@ const NEWS_SOURCES = [
     }
 ];
 
-// Override fetchSource to handle RSS
+// Fetch from a single source
 async function fetchSource(source) {
     try {
-        if (source.api) {
-            // Hacker News
-            if (source.id === 'hackernews') {
-                const response = await fetch(source.api);
-                const data = await response.json();
-                return await source.transform(data);
-            }
+        // Hacker News
+        if (source.id === 'hackernews') {
+            const response = await fetch(source.api);
+            if (!response.ok) throw new Error('Failed to fetch');
+            const data = await response.json();
+            return await source.transform(data);
         }
         
         // RSS feeds - use CORS proxy
@@ -156,7 +155,7 @@ async function fetchSource(source) {
             const response = await fetch(CORS_PROXY + encodeURIComponent(source.url));
             if (!response.ok) throw new Error('Failed to fetch');
             const text = await response.text();
-            return source.transform(text);
+            return source.transform(text, source.id);
         }
     } catch (error) {
         console.error(`Error fetching ${source.name}:`, error);
@@ -197,38 +196,6 @@ async function fetchAllNews() {
     } catch (error) {
         console.error('Error fetching news:', error);
         showError('获取资讯失败，请刷新重试');
-    }
-}
-
-// Fetch from a single source
-async function fetchSource(source) {
-    try {
-        if (source.api) {
-            // Hacker News - uses Firebase API directly (CORS supported)
-            if (source.id === 'hackernews') {
-                const response = await fetch(source.api);
-                const data = await response.json();
-                return await source.transform(data);
-            }
-            // Reddit - uses JSON API
-            else if (source.id === 'reddit') {
-                const response = await fetch(source.api, {
-                    headers: { 'User-Agent': 'AI-News-Bot/1.0' }
-                });
-                const data = await response.json();
-                return source.transform(data);
-            }
-        }
-        
-        // Other sources - need CORS proxy
-        if (source.url) {
-            const response = await fetch(CORS_PROXY + encodeURIComponent(source.url));
-            const html = await response.text();
-            return source.transform(html);
-        }
-    } catch (error) {
-        console.error(`Error fetching ${source.name}:`, error);
-        return [];
     }
 }
 
@@ -277,7 +244,10 @@ function getSourceIcon(source) {
         twitter: '🐦',
         reddit: '🤖',
         news: '📰',
-        hackernews: '🔧'
+        hackernews: '🔧',
+        techcrunch: '📰',
+        verge: '🔮',
+        mit: '🔬'
     };
     return icons[source] || '📌';
 }
@@ -287,7 +257,10 @@ function getSourceName(source) {
         twitter: 'Twitter',
         reddit: 'Reddit',
         news: 'AI News',
-        hackernews: 'Hacker News'
+        hackernews: 'Hacker News',
+        techcrunch: 'TechCrunch',
+        verge: 'The Verge',
+        mit: 'MIT Tech Review'
     };
     return names[source] || source;
 }

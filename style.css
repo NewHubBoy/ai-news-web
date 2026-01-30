@@ -153,6 +153,9 @@ main {
 .source-reddit { background: #ff4500; color: white; }
 .source-news { background: #00d9ff; color: #1a1a2e; }
 .source-hackernews { background: #ff6600; color: white; }
+.source-techcrunch { background: #00d9ff; color: #1a1a2e; }
+.source-verge { background: #a020f0; color: white; }
+.source-mit { background: #00ff88; color: #1a1a2e; }
 
 .news-time {
     color: #8892b0;
