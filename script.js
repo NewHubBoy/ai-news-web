@@ -14,7 +14,7 @@ const refreshBtn = document.getElementById('refreshBtn');
 let allNews = [];
 let allSources = new Set();
 
-// News sources configuration
+// News sources configuration - Using RSS feeds
 const NEWS_SOURCES = [
     {
         id: 'hackernews',
@@ -23,7 +23,7 @@ const NEWS_SOURCES = [
         api: 'https://hacker-news.firebaseio.com/v0/topstories.json',
         detailApi: 'https://hacker-news.firebaseio.com/v0/item/{id}.json',
         transform: async (data) => {
-            const topStories = data.slice(0, 20);
+            const topStories = data.slice(0, 30);
             const news = [];
             for (const id of topStories) {
                 try {
@@ -33,7 +33,12 @@ const NEWS_SOURCES = [
                         item.title.toLowerCase().includes('gpt') ||
                         item.title.toLowerCase().includes('llm') ||
                         item.title.toLowerCase().includes('neural') ||
-                        item.title.toLowerCase().includes('model'))) {
+                        item.title.toLowerCase().includes('model') ||
+                        item.title.toLowerCase().includes('machine learning') ||
+                        item.title.toLowerCase().includes('deep learning') ||
+                        item.title.toLowerCase().includes('openai') ||
+                        item.title.toLowerCase().includes('anthropic') ||
+                        item.title.toLowerCase().includes('gemini'))) {
                         news.push({
                             title: item.title,
                             url: item.url,
@@ -49,76 +54,115 @@ const NEWS_SOURCES = [
         }
     },
     {
-        id: 'reddit',
-        name: 'Reddit',
-        icon: '🤖',
-        url: 'https://www.reddit.com/r/ArtificialIntelligence/hot.json?limit=20',
-        transform: (data) => {
-            const posts = data.data.children;
-            return posts.map(post => ({
-                title: post.data.title,
-                url: `https://reddit.com${post.data.permalink}`,
-                source: 'reddit',
-                time: post.data.created_utc,
-                score: post.data.score,
-                description: post.data.selftext ? post.data.selftext.substring(0, 200) : ''
-            }));
-        }
-    },
-    {
-        id: 'wired',
-        name: 'Wired AI',
-        icon: '⚡',
-        url: 'https://www.wired.com/tag/artificial-intelligence/',
-        transform: (html) => {
-            // Parse Wired AI articles
+        id: 'techcrunch',
+        name: 'TechCrunch',
+        icon: '📰',
+        url: 'https://techcrunch.com/category/artificial-intelligence/feed/',
+        transform: (xml) => {
             const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const articles = [];
-            doc.querySelectorAll('div.summary-item').forEach(item => {
-                const title = item.querySelector('h2 a, h3 a');
-                const desc = item.querySelector('.summary-item__dek');
-                const link = item.querySelector('a');
+            const doc = parser.parseFromString(xml, 'text/xml');
+            const items = doc.querySelectorAll('item');
+            const news = [];
+            items.forEach(item => {
+                const title = item.querySelector('title');
+                const link = item.querySelector('link');
+                const desc = item.querySelector('description');
+                const pubDate = item.querySelector('pubDate');
                 if (title && link) {
-                    articles.push({
-                        title: title.textContent.trim(),
-                        url: link.href,
+                    news.push({
+                        title: title.textContent,
+                        url: link.textContent,
                         source: 'news',
-                        time: Date.now() / 1000,
-                        description: desc ? desc.textContent.trim() : ''
+                        time: pubDate ? new Date(pubDate.textContent).getTime() / 1000 : Date.now() / 1000,
+                        description: desc ? desc.textContent.replace(/<[^>]*>/g, '').substring(0, 200) : ''
                     });
                 }
             });
-            return articles;
+            return news;
+        }
+    },
+    {
+        id: 'verge',
+        name: 'The Verge',
+        icon: '🔮',
+        url: 'https://www.theverge.com/rss/artificial-intelligence/index.xml',
+        transform: (xml) => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(xml, 'text/xml');
+            const items = doc.querySelectorAll('item');
+            const news = [];
+            items.forEach(item => {
+                const title = item.querySelector('title');
+                const link = item.querySelector('link');
+                const desc = item.querySelector('description');
+                const pubDate = item.querySelector('pubDate');
+                if (title && link) {
+                    news.push({
+                        title: title.textContent,
+                        url: link.textContent,
+                        source: 'news',
+                        time: pubDate ? new Date(pubDate.textContent).getTime() / 1000 : Date.now() / 1000,
+                        description: desc ? desc.textContent.replace(/<[^>]*>/g, '').substring(0, 200) : ''
+                    });
+                }
+            });
+            return news;
         }
     },
     {
         id: 'mit',
-        name: 'MIT AI',
+        name: 'MIT Tech Review',
         icon: '🔬',
-        url: 'https://www.technologyreview.com/topic/artificial-intelligence',
-        transform: (html) => {
+        url: 'https://www.technologyreview.com/topic/artificial-intelligence/feed',
+        transform: (xml) => {
             const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const articles = [];
-            doc.querySelectorAll('article').forEach(item => {
-                const title = item.querySelector('h2 a, h3 a');
-                const desc = item.querySelector('p');
-                const link = item.querySelector('a');
+            const doc = parser.parseFromString(xml, 'text/xml');
+            const items = doc.querySelectorAll('item');
+            const news = [];
+            items.forEach(item => {
+                const title = item.querySelector('title');
+                const link = item.querySelector('link');
+                const desc = item.querySelector('description');
+                const pubDate = item.querySelector('pubDate');
                 if (title && link) {
-                    articles.push({
-                        title: title.textContent.trim(),
-                        url: link.href,
+                    news.push({
+                        title: title.textContent,
+                        url: link.textContent,
                         source: 'news',
-                        time: Date.now() / 1000,
-                        description: desc ? desc.textContent.trim() : ''
+                        time: pubDate ? new Date(pubDate.textContent).getTime() / 1000 : Date.now() / 1000,
+                        description: desc ? desc.textContent.replace(/<[^>]*>/g, '').substring(0, 200) : ''
                     });
                 }
             });
-            return articles;
+            return news;
         }
     }
 ];
+
+// Override fetchSource to handle RSS
+async function fetchSource(source) {
+    try {
+        if (source.api) {
+            // Hacker News
+            if (source.id === 'hackernews') {
+                const response = await fetch(source.api);
+                const data = await response.json();
+                return await source.transform(data);
+            }
+        }
+        
+        // RSS feeds - use CORS proxy
+        if (source.url) {
+            const response = await fetch(CORS_PROXY + encodeURIComponent(source.url));
+            if (!response.ok) throw new Error('Failed to fetch');
+            const text = await response.text();
+            return source.transform(text);
+        }
+    } catch (error) {
+        console.error(`Error fetching ${source.name}:`, error);
+        return [];
+    }
+}
 
 // Fetch all news
 async function fetchAllNews() {
